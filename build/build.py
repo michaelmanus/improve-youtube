@@ -277,14 +277,8 @@ def safari():
 		data = json.load(json_file)
 
 		version = data['version']
-		permissions = data.get('permissions', [])
 
 		data['name'] = 'Improve YouTube! for YouTube & Videos'
-
-		if 'scripting' not in permissions:
-			permissions.append('scripting')
-
-		data['permissions'] = permissions
 
 		json_file.seek(0)
 		json.dump(data, json_file, indent=4, sort_keys=True)

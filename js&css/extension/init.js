@@ -92,27 +92,22 @@ const pageWorldFiles = [
 	'/js&css/web-accessible/init.js'
 ];
 
-if ((navigator.userAgent.indexOf('Safari') !== -1
-	|| (typeof browser !== 'undefined' && browser.runtime?.getURL('')?.startsWith('safari-')))
-	&& (!/Chrom|Android|Windows|Linux/.test(navigator.userAgent)
-		|| /iPhone|iPad/.test(navigator.userAgent)
-	)
-) {
-
-	chrome.runtime.sendMessage({
-		action: 'inject-main-world',
-		files: pageWorldFiles
-	}, function (response) {
-		if (response && response.ok) {
-			finishPageWorldInit();
-		} else {
-			console.warn('[ImprovedTube] Safari MAIN-world injection failed:', chrome.runtime.lastError?.message || response?.error);
-			finishPageWorldInit();
-		}
-	});
-} else {
-	extension.inject(pageWorldFiles.slice(), finishPageWorldInit);
-}
+// Script elements pointing at extension files are blocked by YouTube's CSP in
+// WebKit browsers (Safari, Orion), so inject through chrome.scripting wherever
+// the browser has it, and use script elements only where it doesn't.
+chrome.runtime.sendMessage({
+	action: 'inject-main-world',
+	files: pageWorldFiles
+}, function (response) {
+	if (response && response.ok) {
+		finishPageWorldInit();
+	} else if (response && response.unavailable) {
+		extension.inject(pageWorldFiles.slice(), finishPageWorldInit);
+	} else {
+		console.warn('[ImprovedTube] MAIN-world injection failed:', chrome.runtime.lastError?.message || response?.error);
+		finishPageWorldInit();
+	}
+});
 
 document.addEventListener('DOMContentLoaded', function () {
 	extension.domReady = true;

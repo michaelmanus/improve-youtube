@@ -257,13 +257,9 @@ chrome.windows.onFocusChanged.addListener(function (wId) {
 	});
 });
 /*--------------------------------------------------------------
-# EXTENSION API SCRIPT INJECTION (for Safari)
+# EXTENSION API SCRIPT INJECTION
 --------------------------------------------------------------*/
 async function injectFilesInMainWorld(tabId, frameId, files) {
-	if (!chrome.scripting?.insertCSS || !chrome.scripting?.executeScript) {
-		throw new Error('chrome.scripting main-world injection failed');
-	}
-
 	const target = { tabId };
 
 	if (typeof frameId === 'number') {
@@ -329,12 +325,21 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 				break
 			}
 
+			if (!chrome.scripting?.insertCSS || !chrome.scripting?.executeScript) {
+				sendResponse({
+					ok: false,
+					unavailable: true,
+					error: 'chrome.scripting is not available'
+				});
+				break
+			}
+
 			injectFilesInMainWorld(sender.tab.id, sender.frameId, message.files)
 				.then(function () {
 					sendResponse({ ok: true });
 				})
 				.catch(function (error) {
-					const message = error?.message || 'Safari main-world injection failed';
+					const message = error?.message || 'MAIN-world injection failed';
 					console.error(message, error);
 					sendResponse({
 						ok: false,
